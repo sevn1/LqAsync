@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// LqAsync 任务执行对象
+// 任务执行对象
 type LqAsync struct {
 	timeout time.Duration          //超时时间
 	count   int                    //任务数
