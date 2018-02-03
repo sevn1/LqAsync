@@ -11,6 +11,7 @@ package main
 import (
 	"fmt"
 	"time"
+	"github.com/sevn1/LqAsync"
 )
 
 func main() {
