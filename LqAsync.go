@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"reflect"
+	"runtime"
 	"sync"
 	"time"
 )
@@ -67,6 +68,8 @@ func (a *LqAsync) Addfunc(name string, handler interface{}, params ...interface{
 // timeoutRun 任务执行函数，成功时将返回一个用于接受结果的channel
 // 在所有异步任务都运行完成时，结果channel将会返回一个map[string][]interface{}的结果。
 func (a *LqAsync) timeoutRun() (map[string][]interface{}, bool) {
+	//程序开启多核支持
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	if a.count < 1 {
 		return nil, false
 	}
