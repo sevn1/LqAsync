@@ -36,6 +36,6 @@ func functest2() string {
 ```
 **log Print**
 ```
-map[functest1:[result1] functest2:[result2]]
+map[functest1:[result1]]
 true
 ```
