@@ -1,6 +1,6 @@
 # LqAsync
 
-Wait和Cancel两种并发控制方式结合开发的一个异步处理程序
+Wait和Cancel两种并发控制方式结合开发的一个并发处理程序
 
 ## Sample
 

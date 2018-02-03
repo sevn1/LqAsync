@@ -8,25 +8,25 @@ import (
 	"time"
 )
 
-// Async 异步执行对象
+// Async 任务执行对象
 type LqAsync struct {
 	timeout time.Duration          //超时时间
 	count   int                    //任务数
 	tasks   map[string]LqAsyncInfo //异步执行所需要的数据
 }
 
-// 异步执行所需要的数据
+// 任务执行所需要的数据
 type LqAsyncInfo struct {
 	Handler reflect.Value   //方法地址
 	Params  []reflect.Value //参数
 }
 
-//创建一个新的异步执行对象
+//创建一个新的任务执行对象
 func NewAsync() LqAsync {
 	return LqAsync{tasks: make(map[string]LqAsyncInfo)}
 }
 
-//创建一个新的异步执行对象 老版本的兼容
+//创建一个新的任务执行对象 老版本的兼容
 func NewAsyncOld() LqAsync {
 	return NewAsync()
 }
@@ -65,8 +65,8 @@ func (a *LqAsync) Addfunc(name string, handler interface{}, params ...interface{
 	return false
 }
 
-// timeoutRun 任务执行函数，成功时将返回一个用于接受结果的channel
-// 在所有异步任务都运行完成时，结果channel将会返回一个map[string][]interface{}的结果。
+// timeoutRun 任务执行函数
+// 在所有任务都运行完成时，将会返回一个map[string][]interface{}的结果。
 func (a *LqAsync) timeoutRun() (map[string][]interface{}, bool) {
 	//程序开启多核支持
 	runtime.GOMAXPROCS(runtime.NumCPU())
