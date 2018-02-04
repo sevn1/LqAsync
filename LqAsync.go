@@ -112,7 +112,7 @@ func (a *LqAsync) timeoutRun() (map[string][]interface{}, bool) {
 			//执行任务函数方法
 			for {
 				select {
-				case <-ctx.Done(): //超时则结束
+				case <-ctx.Done(): //超时则结束goroutine
 					return
 				default:
 					values := async.Handler.Call(async.Params)
@@ -130,6 +130,7 @@ func (a *LqAsync) timeoutRun() (map[string][]interface{}, bool) {
 
 		}(k, v, chans, ctx)
 	}
+	//等待goroutine全部执行完成
 	wg.Wait()
 	return result, true
 }
