@@ -1,41 +1,43 @@
-# LqAsync
+# grpool
 
-Wait和Cancel两种并发控制方式结合开发的一个并发处理程序
+根据github.com/ivpusic/grpool修改的 Goroutine池
+修改job类型，以支持func带参数
 
 ## Sample
 
 **sample.go**
 ```golang
-package main
+package grpool
 
 import (
 	"fmt"
+	"runtime"
 	"time"
-	"github.com/sevn1/LqAsync"
+
+	"github.com/sevn1/grpool"
 )
 
-func main() {
-	a := NewAsync()
-	a.timeout = 2 * time.Second
-	a.Addfunc("functest1", functest1)
-	a.Addfunc("functest2", functest2)
-	s, ok := a.timeoutRun()
-	fmt.Println(s)
-	fmt.Println(ok)
-}
+func first() {
+	numCPUs := runtime.NumCPU()
+	runtime.GOMAXPROCS(numCPUs)
 
-func functest1() string {
+	// number of workers, and size of job queue
+	pool := grpool.NewPool(100, 50)
+
+	// release resources used by pool
+	defer pool.Release()
+
+	// submit one or more jobs to pool
+	for i := 0; i < 10; i++ {
+		count := i
+
+		pool.AddFunc(functest,i)
+	}
+
+	// dummy wait until jobs are finished
 	time.Sleep(1 * time.Second)
-	return "result1"
-}
-func functest2() string {
-	time.Sleep(3 * time.Second)
-	return "result2"
 }
 
-```
-**log Print**
-```
-map[functest1:[result1]]
-true
-```
+func functest(c interface{}){
+	fmt.Println(c)
+}
