@@ -67,7 +67,7 @@ func (a *LqAsync) Addfunc(name string, handler interface{}, params ...interface{
 
 // timeoutRun 任务执行函数
 // 在所有任务都运行完成时，将会返回一个map[string][]interface{}的结果。
-func (a *LqAsync) timeoutRun() (map[string][]interface{}, bool) {
+func (a *LqAsync) TimeoutRun() (map[string][]interface{}, bool) {
 	//程序开启多核支持
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	if a.Count < 1 {
