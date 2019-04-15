@@ -10,8 +10,8 @@ import (
 
 // 任务执行对象
 type LqAsync struct {
-	timeout time.Duration          //超时时间
-	count   int                    //任务数
+	Timeout time.Duration          //超时时间
+	Count   int                    //任务数
 	tasks   map[string]LqAsyncInfo //异步执行所需要的数据
 }
 
@@ -58,7 +58,7 @@ func (a *LqAsync) Addfunc(name string, handler interface{}, params ...interface{
 			}
 		}
 		//自增任务数
-		a.count++
+		a.Count++
 		return true
 	}
 
@@ -70,30 +70,30 @@ func (a *LqAsync) Addfunc(name string, handler interface{}, params ...interface{
 func (a *LqAsync) timeoutRun() (map[string][]interface{}, bool) {
 	//程序开启多核支持
 	runtime.GOMAXPROCS(runtime.NumCPU())
-	if a.count < 1 {
+	if a.Count < 1 {
 		return nil, false
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), a.timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), a.Timeout)
 	defer cancel()
 
 	//开启阻塞主线程的执行，直到所有的goroutine执行完成
 	wg := sync.WaitGroup{}
 	//添加携程数
-	wg.Add(a.count)
+	wg.Add(a.Count)
 	//结果集
 	result := make(map[string][]interface{})
-	chans := make(chan map[string]interface{}, a.count)
+	chans := make(chan map[string]interface{}, a.Count)
 
 	go func(result map[string][]interface{}, chans chan map[string]interface{}) {
 		for {
-			if a.count < 1 {
+			if a.Count < 1 {
 				break
 			}
 			select {
 			case <-ctx.Done():
 				break
 			case res := <-chans:
-				a.count--
+				a.Count--
 				result[res["name"].(string)] = res["result"].([]interface{})
 			}
 		}
