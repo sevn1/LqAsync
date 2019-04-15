@@ -132,5 +132,6 @@ func (a *LqAsync) TimeoutRun() (map[string][]interface{}, bool) {
 	}
 	//等待goroutine全部执行完成
 	wg.Wait()
+
 	return result, true
 }
