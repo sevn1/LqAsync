@@ -13,6 +13,7 @@ type LqAsync struct {
 	Timeout time.Duration          //超时时间
 	Count   int                    //任务数
 	tasks   map[string]LqAsyncInfo //异步执行所需要的数据
+	rwMutex *sync.RWMutex
 }
 
 // 任务执行所需要的数据
@@ -23,7 +24,7 @@ type LqAsyncInfo struct {
 
 //创建一个新的任务执行对象
 func NewAsync() LqAsync {
-	return LqAsync{tasks: make(map[string]LqAsyncInfo)}
+	return LqAsync{tasks: make(map[string]LqAsyncInfo), rwMutex: new(sync.RWMutex)}
 }
 
 //创建一个新的任务执行对象 老版本的兼容
@@ -78,54 +79,55 @@ func (a *LqAsync) TimeoutRun() (map[string][]interface{}, bool) {
 
 	//开启阻塞主线程的执行，直到所有的goroutine执行完成
 	wg := sync.WaitGroup{}
-	//添加携程数
-	wg.Add(a.Count)
 	//结果集
 	result := make(map[string][]interface{})
 	chans := make(chan map[string]interface{}, a.Count)
 
+	wg.Add(1)
 	go func(result map[string][]interface{}, chans chan map[string]interface{}) {
+		defer wg.Done()
 		for {
 			if a.Count < 1 {
 				break
 			}
 			select {
 			case <-ctx.Done():
-				break
+				return
 			case res := <-chans:
 				a.Count--
+				a.rwMutex.Lock()
 				result[res["name"].(string)] = res["result"].([]interface{})
+				a.rwMutex.Unlock()
 			}
 		}
 	}(result, chans)
 	//循环任务
 	for k, v := range a.tasks {
+		wg.Add(1)
 		go func(name string, async LqAsyncInfo, chans chan map[string]interface{}, ctx context.Context) {
 			defer wg.Done()
-			result := make([]interface{}, 0)
-			//设置返回值
-			//name：任务名称
-			//result:返回值
-			defer func(name string, chans chan map[string]interface{}) {
-				chans <- map[string]interface{}{"name": name, "result": result}
-			}(name, chans)
-			//执行任务函数方法
-			for {
-				select {
-				case <-ctx.Done(): //超时则结束goroutine
-					return
-				default:
-					values := async.Handler.Call(async.Params)
-					//任务返回值
-					if valuesNum := len(values); valuesNum > 0 {
-						resultItems := make([]interface{}, valuesNum)
-						for k, v := range values {
-							resultItems[k] = v.Interface()
-						}
-						result = resultItems
+			c := make(chan map[string]interface{}, 1)
+			go func() {
+				result := make([]interface{}, 0)
+				//设置返回值
+				//name：任务名称
+				//result:返回值
+				//执行任务函数方法
+				values := async.Handler.Call(async.Params)
+				//任务返回值
+				if valuesNum := len(values); valuesNum > 0 {
+					for _, v := range values {
+						result = append(result, v.Interface())
 					}
-					return
 				}
+				c <- map[string]interface{}{"name": name, "result": result}
+			}()
+			select {
+			case <-ctx.Done():
+				return
+			case str := <-c:
+				chans <- str
+				return
 			}
 
 		}(k, v, chans, ctx)
